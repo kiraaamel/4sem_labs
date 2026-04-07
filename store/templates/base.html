@@ -317,13 +317,29 @@
     
     {% if user.is_authenticated %}
         <span>|</span>
-        <span>Привет, {{ user.first_name|default:user.email }}</span>
-        <a href="{% url 'store:profile' %}">Профиль</a>
-        <a href="{% url 'store:logout' %}">Выйти</a>
+        <span>👋 Привет, {{ user.first_name|default:user.email }}</span>
+        
+        <!-- Ссылки для всех авторизованных -->
+        <a href="{% url 'store:cart_detail' %}">🛒 Корзина</a>
+        <a href="{% url 'store:my_orders' %}">📦 Заказы</a>
+        <a href="{% url 'store:profile' %}">👤 Профиль</a>
+        
+        <!-- Только для персонала (админов) -->
+        {% if user.is_staff %}
+            <a href="{% url 'store:product_create' %}" style="background: #c9a96e; color: #2c3e50; padding: 5px 10px; border-radius: 5px;">
+                ➕ Добавить товар
+            </a>
+            <a href="/admin/" style="background: #2c3e50; color: #c9a96e; padding: 5px 10px; border-radius: 5px;">
+                🔧 Админка
+            </a>
+        {% endif %}
+        
+        <a href="{% url 'store:logout' %}">🚪 Выйти</a>
+        
     {% else %}
         <span>|</span>
-        <a href="{% url 'store:login' %}">Войти</a>
-        <a href="{% url 'store:register' %}">Регистрация</a>
+        <a href="{% url 'store:login' %}">🔑 Войти</a>
+        <a href="{% url 'store:register' %}">📝 Регистрация</a>
     {% endif %}
 </div>
 

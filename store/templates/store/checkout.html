@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+
+<h1>🛍️ Оформление заказа</h1>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <!-- Форма заказа -->
+    <div class="product-card">
+        <h3>Данные для доставки</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>Адрес доставки *</label>
+                <textarea name="delivery_address" rows="3" required placeholder="Город, улица, дом, квартира"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Способ доставки *</label>
+                <select name="delivery_method" required>
+                    {% for value, label in delivery_methods %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Способ оплаты *</label>
+                <select name="payment_method" required>
+                    {% for value, label in payment_methods %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="gift_wrap">
+                    🎁 Подарочная упаковка (+500 ₽)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label>Поздравительная открытка</label>
+                <textarea name="gift_message" rows="2" placeholder="Текст поздравления..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Комментарий к заказу</label>
+                <textarea name="comment" rows="2" placeholder="Дополнительная информация..."></textarea>
+            </div>
+            
+            <button type="submit" style="width: 100%; background: #c9a96e; color: #2c3e50; font-size: 18px;">
+                ✅ Подтвердить заказ
+            </button>
+        </form>
+    </div>
+    
+    <!-- Сводка по заказу -->
+    <div class="product-card">
+        <h3>Ваш заказ</h3>
+        
+        {% for item in items %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <span>{{ item.product.name }} x{{ item.quantity }}</span>
+                <span>{{ item.total_price|rub_format }}</span>
+            </div>
+        {% endfor %}
+        
+        <div style="margin-top: 20px; padding-top: 10px; border-top: 2px solid #c9a96e;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px;">
+                <span>Итого:</span>
+                <span style="color: #c9a96e;">{{ cart.total_price|rub_format }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

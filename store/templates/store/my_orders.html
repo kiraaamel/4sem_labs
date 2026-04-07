@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}Мои заказы{% endblock %}
+
+{% block content %}
+
+<h1>📦 Мои заказы</h1>
+
+{% if orders %}
+    {% for order in orders %}
+        <div class="product-card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>Заказ #{{ order.order_number }}</strong>
+                    <span style="margin-left: 15px; color: #7a8a9a;">{{ order.created_at|date:"d.m.Y" }}</span>
+                </div>
+                <div>
+                    <span style="background: #3a4a5a; color: #e8dcc8; padding: 5px 10px; border-radius: 20px; font-size: 12px;">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <p>Сумма: <strong>{{ order.total_price|rub_format }}</strong></p>
+                <p>Товаров: {{ order.items.count }}</p>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="{% url 'store:order_detail' order.order_number %}" class="btn">Подробнее</a>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>У вас пока нет заказов</p>
+    <a href="{% url 'store:product_list' %}" class="btn">Перейти к покупкам</a>
+{% endif %}
+
+{% endblock %}

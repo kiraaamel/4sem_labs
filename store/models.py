@@ -166,8 +166,8 @@ class Category(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
+            self.slug = slugify(self.name) #создаем из названия
+        super().save(*args, **kwargs) #сохраняем в базу
 
 
 class Product(models.Model):
@@ -368,9 +368,10 @@ class Product(models.Model):
         return count
     
     def clean(self):
-        if self.old_price and self.old_price <= self.price:
-            raise ValidationError({'old_price': 'Старая цена должна быть больше текущей'})
-        
+        if self.old_price is not None and self.price is not None:
+            if self.old_price <= self.price:
+                raise ValidationError({'old_price': 'Старая цена должна быть больше текущей'})
+    
         if self.stones and not self.stone_type:
             raise ValidationError({'stone_type': 'Укажите тип камней'})
         
@@ -382,7 +383,17 @@ class Product(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+        
+        # Гарантируем уникальность slug
+            while Product.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+        
+            self.slug = slug
+    
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):
@@ -650,3 +661,40 @@ class Wishlist(models.Model):
     
     def __str__(self):
         return f"{self.user.email} - {self.product.name}"
+
+class CollectionProduct(models.Model):
+    """Промежуточная модель — связь между коллекцией и товаром"""
+    
+    # Ссылка на коллекцию
+    collection = models.ForeignKey(
+        'Collection', 
+        on_delete=models.CASCADE,
+        related_name='collection_products'
+    )
+    
+    # Ссылка на товар
+    product = models.ForeignKey(
+        'Product', 
+        on_delete=models.CASCADE,
+        related_name='product_collections'
+    )
+    
+    # доп поля
+    added_at = models.DateTimeField(auto_now_add=True)  # когда добавили
+    sort_order = models.PositiveIntegerField(default=0) # порядок показа
+    
+    class Meta:
+        unique_together = ['collection', 'product']  # товар не может быть в коллекции дважды
+        ordering = ['sort_order', 'added_at']
+
+class Collection(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # ManyToMany связь через промежуточную модель
+    products = models.ManyToManyField(
+        'Product',
+        through='CollectionProduct',  # указываем промежуточную модель
+        related_name='collections'
+    )

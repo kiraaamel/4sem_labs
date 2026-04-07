@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div>
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100%; border-radius: 10px;">
+        {% else %}
+            <div style="background: #eee; padding: 100px; text-align: center; border-radius: 10px;">Нет фото</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <h1>{{ product.name }}</h1>
+        
+        <p class="product-price" style="font-size: 32px;">
+            {% if product.old_price %}
+                <span class="product-old-price" style="font-size: 20px;">{{ product.old_price|rub_format }}</span>
+            {% endif %}
+            <span style="color: #c9a96e;">{{ product.price|rub_format }}</span>
+        </p>
+        
+        <p><strong>Категория:</strong> {{ product.category.name }}</p>
+        <p><strong>Тип серебра:</strong> {{ product.get_silver_type_display }}</p>
+        <p><strong>Проба:</strong> {{ product.get_fineness_display }}</p>
+        <p><strong>Вес:</strong> {{ product.weight }} г</p>
+        {% if product.size %}
+            <p><strong>Размер:</strong> {{ product.size }}</p>
+        {% endif %}
+        {% if product.stones %}
+            <p><strong>Камни:</strong> {{ product.get_stone_type_display }}</p>
+        {% endif %}
+        
+        <p><strong>Наличие:</strong> 
+            {% if product.available_quantity > 0 %}
+                <span style="color: green;">В наличии ({{ product.available_quantity }} шт)</span>
+            {% else %}
+                <span style="color: red;">Нет в наличии</span>
+            {% endif %}
+        </p>
+        
+        <p><strong>Описание:</strong></p>
+        <p>{{ product.description|linebreaks }}</p>
+        
+        {% if product.available_quantity > 0 %}
+            <form method="post" action="{% url 'store:add_to_cart' product.id %}" style="margin-top: 20px;">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="background: #c9a96e; color: #2c3e50; font-size: 18px; padding: 12px 30px;">
+                    🛒 Добавить в корзину
+                </button>
+            </form>
+        {% endif %}
+        
+        {% if user.is_authenticated and user.is_staff %}
+            <div style="margin-top: 20px;">
+                <a href="{% url 'store:product_edit' product.id %}" class="btn">✏️ Редактировать</a>
+                <a href="{% url 'store:product_delete' product.id %}" class="btn" style="background: #c0392b;">🗑️ Удалить</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

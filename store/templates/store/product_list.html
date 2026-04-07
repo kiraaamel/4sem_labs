@@ -7,7 +7,13 @@
 {% block content %}
 
 <h1>Ювелирные изделия</h1>
-
+{% if user.is_authenticated and user.is_staff %}
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'store:product_create' %}" class="btn" style="background: #c9a96e; color: #2c3e50;">
+            ➕ Добавить новый товар
+        </a>
+    </div>
+{% endif %}
 <div class="info-block">
     {% current_time as now %}
     <span>🕐 {{ now }}</span>
@@ -23,6 +29,12 @@
     {% endfor %}
 </div>
 
+{% if user.is_authenticated and user.is_staff %}
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'store:product_create' %}" class="btn">➕ Добавить товар</a>
+    </div>
+{% endif %}
+
 <div class="products-grid">
     {% for product in products %}
         <div class="product-card">
@@ -33,7 +45,7 @@
                 {% endif %}
                 {{ product.price|rub_format }}
             </p>
-            <p style="color: #7a8a9a; font-size: 12px;">{{ product.silver_type|default:"" }}</p>
+            <p style="color: #7a8a9a; font-size: 12px;">{{ product.get_silver_type_display }}</p>
             <p>{{ product.description|truncatechars:80 }}</p>
             <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
         </div>

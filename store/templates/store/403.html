@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Доступ запрещён</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f5f0e8; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; }
+        h1 { color: #c0392b; }
+        a { color: #c9a96e; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚫 Доступ запрещён</h1>
+        <p>У вас нет прав для просмотра этой страницы.</p>
+        <p><a href="{% url 'store:product_list' %}">← Вернуться на главную</a></p>
+    </div>
+</body>
+</html>

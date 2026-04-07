@@ -14,7 +14,9 @@
             <label>{{ field.label }}</label>
             {{ field }}
             {% if field.errors %}
-                <small style="color: #c0392b;">{{ field.errors|striptags }}</small>
+                <div class="error" style="color: #c0392b; font-size: 14px; margin-top: 5px;">
+                    {{ field.errors|striptags }}
+                </div>
             {% endif %}
         </div>
     {% endfor %}

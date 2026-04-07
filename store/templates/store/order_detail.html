@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}Заказ #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+
+<h1>Заказ #{{ order.order_number }}</h1>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div class="product-card">
+        <h3>Информация о заказе</h3>
+        <p><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+        <p><strong>Статус:</strong> {{ order.get_status_display }}</p>
+        <p><strong>Способ доставки:</strong> {{ order.get_delivery_method_display }}</p>
+        <p><strong>Способ оплаты:</strong> {{ order.get_payment_method_display }}</p>
+        <p><strong>Адрес доставки:</strong> {{ order.delivery_address }}</p>
+        {% if order.gift_wrap %}
+            <p><strong>🎁 Подарочная упаковка:</strong> Да</p>
+        {% endif %}
+        {% if order.gift_message %}
+            <p><strong>Открытка:</strong> {{ order.gift_message }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="product-card">
+        <h3>Товары в заказе</h3>
+        {% for item in order.items.all %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <span>{{ item.product_name }} x{{ item.quantity }}</span>
+                <span>{{ item.price|rub_format }}</span>
+            </div>
+        {% endfor %}
+        
+        <div style="margin-top: 20px; padding-top: 10px; border-top: 2px solid #c9a96e;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px;">
+                <span>Итого:</span>
+                <span style="color: #c9a96e;">{{ order.total_price|rub_format }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{% url 'store:my_orders' %}" class="btn">← Мои заказы</a>
+</div>
+
+{% endblock %}
