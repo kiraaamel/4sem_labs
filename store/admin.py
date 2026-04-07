@@ -1,16 +1,13 @@
-# admin.py
 from decimal import Decimal
-
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils import timezone
-
 from .models import (
     User, Category, Product, Cart, CartItem, 
     Order, OrderItem, Review, Wishlist
 )
-
+from .admin_actions import export_products_to_pdf
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -178,7 +175,7 @@ class OrderAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'category', 'price_display', 
                    'silver_info', 'weight', 'stock_status', 'has_discount_display', 
-                   'stones_display', 'image_preview', 'images_count_display', 'created_at']
+                   'stones_display', 'image_preview', 'images_count_display', 'created_at', 'instruction_file_link']
     list_filter = ['category', 'silver_type', 'fineness', 'stones', 'created_at', 'collection']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'collection']
@@ -214,6 +211,16 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
             'description': 'Если в изделии есть камни, укажите их характеристики'
         }),
+        ('Документы', {
+            'fields': ('instruction_file',),
+            'classes': ('collapse',),
+            'description': 'Загрузите дополнительные файлы (инструкции, сертификаты)'
+        }),
+        ('Ссылки', { 
+            'fields': ('external_link',),
+            'classes': ('collapse',),
+            'description': 'Ссылка на видеообзор, сайт производителя или дополнительную информацию'
+        }),
         ('Метаданные', {
             'fields': ('collection', 'created_by', 'created_at', 'updated_at'),
             'classes': ('collapse',)
@@ -231,7 +238,18 @@ class ProductAdmin(admin.ModelAdmin):
                 obj.price, obj.old_price, discount_percent
             )
         return format_html('<span style="font-weight: bold;">{} ₽</span>', obj.price)
+    @admin.display(description='Инструкция')
+    def instruction_file_link(self, obj):
+        if obj.instruction_file:
+            return format_html('<a href="{}" target="_blank">📄 Скачать инструкцию</a>', obj.instruction_file.url)
+        return '-'
     
+    @admin.display(description='Ссылка')
+    def external_link(self, obj):
+        if obj.external_link:
+            return format_html('<a href="{}" target="_blank">🔗 Открыть</a>', obj.external_link)
+        return '-'
+
     @admin.display(description='Серебро')
     def silver_info(self, obj):
         silver_type_display = obj.get_silver_type_display()
@@ -355,8 +373,6 @@ class ProductAdmin(admin.ModelAdmin):
             return f"{stone_display} ({obj.stone_weight} кар)"
         return stone_display
     
-    actions = ['apply_discount', 'increase_price']
-    
     @admin.action(description='Применить скидку 10 процентов к выбранным товарам')
     def apply_discount(self, request, queryset):
         for product in queryset:
@@ -372,7 +388,8 @@ class ProductAdmin(admin.ModelAdmin):
             product.price = product.price * Decimal('1.05')
             product.save()
         self.message_user(request, f'Цена увеличена для {queryset.count()} товаров')
-
+    
+    actions = [apply_discount, increase_price, export_products_to_pdf]
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):

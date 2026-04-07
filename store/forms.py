@@ -33,12 +33,14 @@ class ProductForm(forms.ModelForm):
         fields = ['name', 'description', 'price', 'old_price', 
                   'stock_quantity', 'category', 'silver_type', 'fineness',
                   'weight', 'size', 'stones', 'stone_type', 'stone_weight',
-                  'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5']
+                  'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5', 'instruction_file', 'external_link']
         # Пункт 4: widgets
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Опишите изделие...'}), #высота поля 5 строк
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название товара'}), #как выглядит форма: добавления css класса и подсказки placeholder
             'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'url-идентификатор'}),
+            'instruction_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'external_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'ссылка для вашего удобства'}),
         }
     
     # Пункт 5: clean_<fieldname> — валидация конкретного поля

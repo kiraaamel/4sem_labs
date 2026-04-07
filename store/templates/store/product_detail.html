@@ -61,6 +61,20 @@
                 <a href="{% url 'store:product_delete' product.id %}" class="btn" style="background: #c0392b;">🗑️ Удалить</a>
             </div>
         {% endif %}
+        {% if product.instruction_file %}
+            <p>
+                <strong>📄 Инструкция:</strong> 
+                <a href="{{ product.instruction_file.url }}" target="_blank">Скачать файл</a>
+            </p>
+        {% endif %}
+        {% if product.external_link %}
+            <p>
+                <strong>🔗 Дополнительная информация:</strong>
+                <a href="{{ product.external_link }}" target="_blank" rel="noopener noreferrer">
+                    Перейти по ссылке →
+                </a>
+            </p>
+        {% endif %}
     </div>
 </div>
 

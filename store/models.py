@@ -305,6 +305,19 @@ class Product(models.Model):
     )
     
     collection = models.CharField(max_length=100, blank=True, verbose_name='Коллекция')
+    instruction_file = models.FileField(
+        upload_to='instructions/',
+        blank=True,
+        null=True,
+        verbose_name='Инструкция к товару',
+        help_text='Загрузите инструкцию'
+    )
+    external_link = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Внешняя ссылка',
+        help_text='Ссылка на видеообзор, сайт производителя или дополнительную информацию'
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     created_by = models.ForeignKey(
