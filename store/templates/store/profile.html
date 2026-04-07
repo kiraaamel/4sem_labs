@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+
+<h1>Личный кабинет</h1>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div class="product-card" style="text-align: left;">
+        <h3>Информация о вас</h3>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Имя:</strong> {{ user.first_name|default:"не указано" }}</p>
+        <p><strong>Фамилия:</strong> {{ user.last_name|default:"не указано" }}</p>
+        <p><strong>Телефон:</strong> {{ user.phone|default:"не указан" }}</p>
+        <p><strong>Бонусные баллы:</strong> 🎁 {{ user.bonus_points }}</p>
+    </div>
+    
+    <div class="product-card" style="text-align: left;">
+        <h3>Статистика</h3>
+        <p><strong>Всего заказов:</strong> {{ orders|length }}</p>
+        <p><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y" }}</p>
+    </div>
+</div>
+
+<h2 style="margin: 30px 0 20px 0;">📦 Мои заказы</h2>
+
+{% if orders %}
+    {% for order in orders %}
+        <div class="product-card" style="text-align: left; margin-bottom: 15px;">
+            <p><strong>Заказ #{{ order.order_number }}</strong></p>
+            <p>Дата: {{ order.created_at|date:"d.m.Y" }}</p>
+            <p>Статус: {{ order.get_status_display }}</p>
+            <p>Сумма: {{ order.total_price|rub_format }}</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>У вас пока нет заказов</p>
+{% endif %}
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{% url 'store:logout' %}" class="btn">Выйти из аккаунта</a>
+</div>
+
+{% endblock %}

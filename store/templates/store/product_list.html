@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+{% load store_tags %}
+
+{% block title %}Товары{% endblock %}
+
+{% block content %}
+
+<h1>Ювелирные изделия</h1>
+
+<div class="info-block">
+    {% current_time as now %}
+    <span>🕐 {{ now }}</span>
+    <span style="margin: 0 20px;">|</span>
+    <span>📊 Средняя цена: {{ stats.avg_price|rub_format }}</span>
+</div>
+
+{% popular_products 4 as popular %}
+<div class="popular-section">
+    <h3>🔥 Популярное этой недели</h3>
+    {% for p in popular %}
+        <a href="{{ p.get_absolute_url }}">{{ p.name }}</a> - {{ p.price|rub_format }}<br>
+    {% endfor %}
+</div>
+
+<div class="products-grid">
+    {% for product in products %}
+        <div class="product-card">
+            <h3>{{ product.name }}</h3>
+            <p class="product-price">
+                {% if product.old_price %}
+                    <span class="product-old-price">{{ product.old_price|rub_format }}</span>
+                {% endif %}
+                {{ product.price|rub_format }}
+            </p>
+            <p style="color: #7a8a9a; font-size: 12px;">{{ product.silver_type|default:"" }}</p>
+            <p>{{ product.description|truncatechars:80 }}</p>
+            <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="pagination">
+    {% if products.has_previous %}
+        <a href="?page=1">« Первая</a>
+        <a href="?page={{ products.previous_page_number }}">Назад</a>
+    {% endif %}
+
+    <span class="current">Страница {{ products.number }} из {{ products.paginator.num_pages }}</span>
+
+    {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}">Вперёд</a>
+        <a href="?page={{ products.paginator.num_pages }}">Последняя »</a>
+    {% endif %}
+</div>
+
+{% endblock %}

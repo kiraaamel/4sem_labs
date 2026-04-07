@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SilverShop - {% block title %}Магазин серебряных украшений{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d5 100%);
+            min-height: 100vh;
+        }
+
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a2a3a 100%);
+            color: #e8dcc8;
+            padding: 25px 0;
+            text-align: center;
+            border-bottom: 3px solid #c9a96e;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 36px;
+            letter-spacing: 3px;
+            font-weight: normal;
+            color: #b8a99a;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #b8a99a;
+            margin-top: 8px;
+        }
+
+        /* Меню */
+        .menu {
+            background: #3a4a5a;
+            padding: 12px 0;
+            text-align: center;
+            border-bottom: 1px solid #c9a96e;
+        }
+
+        .menu a {
+            color: #e8dcc8;
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .menu a:hover {
+            color: #c9a96e;
+            text-decoration: none;
+        }
+
+        .menu span {
+            color: #b8a99a;
+            margin: 0 10px;
+        }
+
+        /* Основной контент */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border: 1px solid #d4c5b0;
+        }
+
+        /* Заголовки */
+        h1, h2, h3 {
+            color: #2c3e50;
+            font-weight: normal;
+        }
+
+        h1 {
+            font-size: 32px;
+            border-bottom: 2px solid #c9a96e;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #3a4a5a;
+        }
+
+        h3 {
+            font-size: 20px;
+            margin: 20px 0 15px 0;
+            color: #4a5a6a;
+        }
+
+        /* Сетка товаров */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e8e0d5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #c9a96e;
+        }
+
+        .product-card h3 {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+
+        .product-price {
+            font-size: 22px;
+            color: #c9a96e;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .product-old-price {
+            font-size: 14px;
+            color: #999;
+            text-decoration: line-through;
+            margin-right: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #3a4a5a;
+            color: #e8dcc8;
+            padding: 8px 20px;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #c9a96e;
+            color: #2c3e50;
+        }
+
+        /* Формы */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d4c5b0;
+            border-radius: 6px;
+            font-family: inherit;
+            background: #fefcf8;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #c9a96e;
+            box-shadow: 0 0 5px rgba(201, 169, 110, 0.3);
+        }
+
+        button {
+            background: #3a4a5a;
+            color: #e8dcc8;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #c9a96e;
+            color: #2c3e50;
+        }
+
+        /* Пагинация */
+        .pagination {
+            text-align: center;
+            margin: 40px 0 20px;
+        }
+
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 8px 14px;
+            margin: 0 4px;
+            border-radius: 6px;
+            text-decoration: none;
+            background: white;
+            border: 1px solid #d4c5b0;
+            color: #3a4a5a;
+        }
+
+        .pagination a:hover {
+            background: #c9a96e;
+            border-color: #c9a96e;
+            color: white;
+        }
+
+        .pagination .current {
+            background: #3a4a5a;
+            color: #e8dcc8;
+            border-color: #3a4a5a;
+        }
+
+        /* Популярное */
+        .popular-section {
+            background: rgba(58, 74, 90, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #c9a96e;
+        }
+
+        .popular-section a {
+            color: #3a4a5a;
+            text-decoration: none;
+        }
+
+        .popular-section a:hover {
+            color: #c9a96e;
+        }
+
+        /* Инфо-блоки */
+        .info-block {
+            background: rgba(201, 169, 110, 0.1);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Футер */
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #7a8a9a;
+            font-size: 12px;
+            border-top: 1px solid #d4c5b0;
+            margin-top: 40px;
+        }
+
+        /* Сообщения */
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .alert-info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid #2196f3;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>✨ SilverShop ✨</h1>
+    <p>Ювелирные изделия из серебра ручной работы</p>
+</div>
+
+<div class="menu">
+    <a href="{% url 'store:product_list' %}">Главная</a>
+    <a href="#">Кольца</a>
+    <a href="#">Серьги</a>
+    <a href="#">Браслеты</a>
+    <a href="#">Подвески</a>
+    
+    {% if user.is_authenticated %}
+        <span>|</span>
+        <span>Привет, {{ user.first_name|default:user.email }}</span>
+        <a href="{% url 'store:profile' %}">Профиль</a>
+        <a href="{% url 'store:logout' %}">Выйти</a>
+    {% else %}
+        <span>|</span>
+        <a href="{% url 'store:login' %}">Войти</a>
+        <a href="{% url 'store:register' %}">Регистрация</a>
+    {% endif %}
+</div>
+
+<div class="container">
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+</div>
+
+<div class="footer">
+    <p>SilverShop — магазин серебряных украшений | Все права защищены © 2024</p>
+    <p>Санкт-Петербург, Невский проспект, 15</p>
+</div>
+
+</body>
+</html>

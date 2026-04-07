@@ -1,10 +1,8 @@
-# models.py - обновленная модель Product с фото
-
 import re
 from decimal import Decimal
 import uuid
 import os
-
+from django.urls import reverse
 from django.db import models
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -16,6 +14,20 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 
+class AvailableProductManager(models.Manager):
+    """Кастомный менеджер для товаров в наличии"""
+    
+    def get_queryset(self):
+        """Возвращает только товары, у которых есть остаток на складе"""
+        return super().get_queryset().filter(stock_quantity__gt=0)
+    
+    def with_discount(self):
+        """Товары в наличии со скидкой"""
+        return self.get_queryset().filter(old_price__isnull=False, old_price__gt=0)
+    
+    def by_silver_type(self, silver_type):
+        """Товары определённого типа серебра"""
+        return self.get_queryset().filter(silver_type=silver_type)
 
 def validate_phone_number(value):
     """
@@ -102,9 +114,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ['-date_joined']
+        ordering = ['-date_joined'] # User сортировка — новые сверху
     
     def __str__(self):
+        "Метод, который определяет, как объект модели отображается в виде строки (user@example.com (Иван Иванов))"
         name_part = f"{self.first_name} {self.last_name}".strip()
         return f"{self.email} ({name_part})" if name_part else self.email
     
@@ -144,7 +157,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
+        ordering = ['name'] # Category сортировка — по алфавиту
     
     def __str__(self):
         if self.parent:
@@ -212,7 +225,7 @@ class Product(models.Model):
     category = models.ForeignKey(
         Category, 
         on_delete=models.CASCADE, 
-        related_name='products',
+        related_name='products', #задаем имя для всех товаров категории
         verbose_name='Категория'
     )
     
@@ -301,11 +314,14 @@ class Product(models.Model):
         related_name='created_products',
         verbose_name='Создал'
     )
-    
+
+    objects = models.Manager()              # стандартный менеджер (все товары)
+    available = AvailableProductManager()  #кастомный менеджер (только в наличии)
+
     class Meta:
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # Product сортировка — новые сверху
     
     def __str__(self):
         silver_display = self.get_silver_type_display()
@@ -369,6 +385,13 @@ class Product(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
     
+    def get_absolute_url(self):
+        """Возвращает URL для просмотра товара""" #Создать URL по имени маршрута
+        return reverse('store:product_detail', kwargs={ #имя маршрута, параметры которые подставятся в юрл, id товара и slug товара
+            'product_id': self.id,
+            'slug': self.slug
+        })
+
     def delete(self, *args, **kwargs):
         """Удаляем файлы изображений при удалении товара"""
         if self.image and os.path.isfile(self.image.path):

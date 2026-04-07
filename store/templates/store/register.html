@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+
+<h1>Регистрация</h1>
+
+<form method="post">
+    {% csrf_token %}
+    
+    {% for field in form %}
+        <div class="form-group">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <small style="color: #c0392b;">{{ field.errors|striptags }}</small>
+            {% endif %}
+        </div>
+    {% endfor %}
+    
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+<p style="margin-top: 20px; text-align: center;">
+    Уже есть аккаунт? <a href="{% url 'store:login' %}" style="color: #c9a96e;">Войти</a>
+</p>
+
+{% endblock %}
