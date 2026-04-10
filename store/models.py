@@ -112,8 +112,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
     
     class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        verbose_name = 'Пользователь' #человеческое название модели в ед числе
+        verbose_name_plural = 'Пользователи' #во множественном
         ordering = ['-date_joined'] # User сортировка — новые сверху
     
     def __str__(self):

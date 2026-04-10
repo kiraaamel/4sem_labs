@@ -86,7 +86,7 @@ class CartAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'session_key']
     readonly_fields = ['created_at', 'updated_at', 'total_price_display']
     raw_id_fields = ['user']
-    inlines = [CartItemInline]
+    inlines = [CartItemInline] #показывает товары в корзине
     
     @admin.display(description='Пользователь')
     def user_display(self, obj):
@@ -125,7 +125,7 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ['order_number', 'created_at', 'total_price_display', 'delivered_at']
     date_hierarchy = 'created_at'
     raw_id_fields = ['user']
-    inlines = [OrderItemInline]
+    inlines = [OrderItemInline] #показывает товары в заказе
     
     fieldsets = (
         ('Информация о заказе', {
@@ -157,7 +157,7 @@ class OrderAdmin(admin.ModelAdmin):
     
     @admin.action(description='Подтвердить выбранные заказы')
     def mark_as_confirmed(self, request, queryset):
-        updated = queryset.update(status='confirmed')
+        updated = queryset.update(status='confirmed') #массовое обновление параметров
         self.message_user(request, f'Подтверждено заказов: {updated}')
     
     @admin.action(description='Отправить выбранные заказы')
@@ -226,7 +226,11 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+    class Media:
+        css = {
+            'all': ('css/admin_custom.css',)
+        }
+        js = ('js/admin_custom.js',)
     @admin.display(description='Цена')
     def price_display(self, obj):
         if obj.has_discount:
@@ -373,6 +377,13 @@ class ProductAdmin(admin.ModelAdmin):
             return f"{stone_display} ({obj.stone_weight} кар)"
         return stone_display
     
+    @admin.action(description='Удалить выбранные товары')
+    def delete_selected(self, request, queryset):
+        """Массовое удаление товаров (демонстрация delete())"""
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, f'Удалено товаров: {count}')
+        
     @admin.action(description='Применить скидку 10 процентов к выбранным товарам')
     def apply_discount(self, request, queryset):
         for product in queryset:
@@ -389,7 +400,7 @@ class ProductAdmin(admin.ModelAdmin):
             product.save()
         self.message_user(request, f'Цена увеличена для {queryset.count()} товаров')
     
-    actions = [apply_discount, increase_price, export_products_to_pdf]
+    actions = [apply_discount, increase_price, export_products_to_pdf, delete_selected]
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):

@@ -6,14 +6,44 @@
 {% block content %}
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    {# Левая колонка — фото #}
     <div>
         {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100%; border-radius: 10px;">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; border-radius: 10px;">
         {% else %}
             <div style="background: #eee; padding: 100px; text-align: center; border-radius: 10px;">Нет фото</div>
         {% endif %}
+        
+        {# Дополнительные фото #}
+        {% if product.image_2 or product.image_3 or product.image_4 or product.image_5 %}
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                {% if product.image_2 %}<img src="{{ product.image_2.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
+                {% if product.image_3 %}<img src="{{ product.image_3.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
+                {% if product.image_4 %}<img src="{{ product.image_4.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
+                {% if product.image_5 %}<img src="{{ product.image_5.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
+            </div>
+        {% endif %}
+        
+        {# Ссылка на инструкцию #}
+        {% if product.instruction_file %}
+            <div style="margin-top: 20px;">
+                <a href="{{ product.instruction_file.url }}" target="_blank" class="btn" style="background: #7a8a9a; display: block; text-align: center;">
+                    📄 Скачать инструкцию (PDF)
+                </a>
+            </div>
+        {% endif %}
+        
+        {# Внешняя ссылка #}
+        {% if product.external_link %}
+            <div style="margin-top: 10px;">
+                <a href="{{ product.external_link }}" target="_blank" class="btn" style="background: #3a4a5a; display: block; text-align: center;">
+                    🔗 Подробнее на сайте
+                </a>
+            </div>
+        {% endif %}
     </div>
     
+    {# Правая колонка — информация о товаре #}
     <div>
         <h1>{{ product.name }}</h1>
         
@@ -46,36 +76,71 @@
         <p><strong>Описание:</strong></p>
         <p>{{ product.description|linebreaks }}</p>
         
+        {# Кнопка в корзину #}
         {% if product.available_quantity > 0 %}
             <form method="post" action="{% url 'store:add_to_cart' product.id %}" style="margin-top: 20px;">
                 {% csrf_token %}
-                <button type="submit" class="btn" style="background: #c9a96e; color: #2c3e50; font-size: 18px; padding: 12px 30px;">
+                <button type="submit" class="btn" style="background: #c9a96e; color: #2c3e50; font-size: 18px; padding: 12px 30px; width: 100%;">
                     🛒 Добавить в корзину
                 </button>
             </form>
         {% endif %}
         
+        {# Кнопки админа #}
         {% if user.is_authenticated and user.is_staff %}
-            <div style="margin-top: 20px;">
-                <a href="{% url 'store:product_edit' product.id %}" class="btn">✏️ Редактировать</a>
-                <a href="{% url 'store:product_delete' product.id %}" class="btn" style="background: #c0392b;">🗑️ Удалить</a>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <a href="{% url 'store:product_edit' product.id %}" class="btn" style="flex: 1;">✏️ Редактировать</a>
+                <a href="{% url 'store:product_delete' product.id %}" class="btn" style="background: #c0392b; flex: 1;">🗑️ Удалить</a>
             </div>
         {% endif %}
-        {% if product.instruction_file %}
-            <p>
-                <strong>📄 Инструкция:</strong> 
-                <a href="{{ product.instruction_file.url }}" target="_blank">Скачать файл</a>
-            </p>
-        {% endif %}
-        {% if product.external_link %}
-            <p>
-                <strong>🔗 Дополнительная информация:</strong>
-                <a href="{{ product.external_link }}" target="_blank" rel="noopener noreferrer">
-                    Перейти по ссылке →
-                </a>
-            </p>
-        {% endif %}
     </div>
+</div>
+
+{# Блок отзывов #}
+<div style="margin-top: 50px;">
+    <h3>⭐ Отзывы покупателей</h3>
+    
+    {% if product.reviews.all %}
+        {% for review in product.reviews.all %}
+            <div class="product-card" style="margin-bottom: 15px; text-align: left;">
+                <div style="display: flex; justify-content: space-between;">
+                    <strong>{{ review.user.email }}</strong>
+                    <span style="color: gold;">{{ review.rating }} ★</span>
+                </div>
+                <p>{{ review.comment }}</p>
+                {% if review.image %}
+                    <img src="{{ review.image.url }}" style="max-height: 100px; border-radius: 5px;">
+                {% endif %}
+                <small style="color: #7a8a9a;">{{ review.created_at|date:"d.m.Y" }}</small>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Пока нет отзывов. Будьте первым!</p>
+    {% endif %}
+    
+    {# Форма добавления отзыва #}
+    {% if user.is_authenticated %}
+        <div class="product-card" style="margin-top: 20px;">
+            <h4>📝 Оставить отзыв</h4>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in review_form %}
+                    <div class="form-group">
+                        {{ field.label_tag }} 
+                        {{ field }} 
+                        {% if field.errors %} 
+                            <div class="error" style="color: #c0392b;">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit">Отправить отзыв</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="product-card" style="margin-top: 20px; text-align: center;">
+            <p><a href="{% url 'store:login' %}">Войдите</a>, чтобы оставить отзыв.</p>
+        </div>
+    {% endif %}
 </div>
 
 {% endblock %}

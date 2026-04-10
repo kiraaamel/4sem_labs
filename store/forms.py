@@ -1,11 +1,12 @@
-from django.utils import timezone
+# store/forms.py
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import Product, Category, User, Order, Cart, Review
+from .models import User, Product, Category, Review, Order
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(label='Email', required=True)
-    first_name = forms.CharField(label='Имя', max_length=150, required=True)
+    first_name = forms.CharField(label='Имя', max_length=150, required=True) #поле для ввода многострочного текста
     last_name = forms.CharField(label='Фамилия', max_length=150, required=True)
     phone = forms.CharField(label='Телефон', required=False)
     
@@ -30,17 +31,68 @@ class ProductForm(forms.ModelForm):
     """Форма для создания/редактирования товара"""
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'old_price', 
+        #какие поля включаем
+        fields = ['name', 'slug', 'description', 'price', 'old_price', 
                   'stock_quantity', 'category', 'silver_type', 'fineness',
                   'weight', 'size', 'stones', 'stone_type', 'stone_weight',
-                  'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5', 'instruction_file', 'external_link']
-        # Пункт 4: widgets
+                  'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5',
+                  'instruction_file', 'external_link']
+        # Пункт 4: widgets как выглядят поля
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Опишите изделие...'}), #высота поля 5 строк
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название товара'}), #как выглядит форма: добавления css класса и подсказки placeholder
             'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'url-идентификатор'}),
             'instruction_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'external_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'ссылка для вашего удобства'}),
+            'external_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://...'}),
+        }
+        #labels - русские названия полей
+        labels = {
+            'name': 'Название товара',
+            'slug': 'URL-идентификатор',
+            'description': 'Описание',
+            'price': 'Цена (₽)',
+            'old_price': 'Старая цена (₽)',
+            'stock_quantity': 'Количество на складе',
+            'category': 'Категория',
+            'silver_type': 'Тип серебра',
+            'fineness': 'Проба',
+            'weight': 'Вес (г)',
+            'size': 'Размер',
+            'stones': 'Наличие драгоценных камней',
+            'stone_type': 'Тип камня',
+            'stone_weight': 'Вес камней (карат)',
+            'collection': 'Коллекция',
+            'image': 'Главное фото',
+            'image_2': 'Дополнительное фото 2',
+            'image_3': 'Дополнительное фото 3',
+            'image_4': 'Дополнительное фото 4',
+            'image_5': 'Дополнительное фото 5',
+            'instruction_file': 'Инструкция к товару',
+            'external_link': 'Внешняя ссылка',
+        }
+        
+        #help_texts - подсказки под полями
+        help_texts = {
+            'name': 'Введите полное название изделия',
+            'slug': 'Останется пустым — заполнится автоматически',
+            'price': 'Цена в рублях',
+            'stock_quantity': 'Сколько единиц товара на складе',
+            'instruction_file': 'Загрузите PDF инструкцию (опционально)',
+            'external_link': 'Ссылка на видеообзор или сайт производителя',
+        }
+        
+        #error_messages - свои сообщения об ошибках
+        error_messages = {
+            'name': {
+                'required': 'Пожалуйста, введите название товара',
+                'max_length': 'Название слишком длинное (максимум 200 символов)',
+            },
+            'price': {
+                'required': 'Укажите цену товара',
+            },
+            'slug': {
+                'unique': 'Товар с таким URL уже существует',
+            },
         }
     
     # Пункт 5: clean_<fieldname> — валидация конкретного поля
@@ -60,7 +112,6 @@ class ProductForm(forms.ModelForm):
     def save(self, commit=True):
         product = super().save(commit=False) #создаем объект но не сохраняем в БД
         # Дополнительная логика перед сохранением
-        product.updated_at = timezone.now()
         if commit:
             product.save() #сохраняем сам объект
             self.save_m2m() # Сохраняем many-to-many связи (если будут)
@@ -74,8 +125,9 @@ class ReviewForm(forms.ModelForm):
         model = Review
         fields = ['rating', 'comment', 'image']
         widgets = {
-            'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Поделитесь впечатлениями о товаре...'}),
+            'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Поделитесь впечатлениями о товаре...'}), 
             'rating': forms.Select(attrs={'class': 'form-control'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
     
     def clean_comment(self):
@@ -83,20 +135,3 @@ class ReviewForm(forms.ModelForm):
         if comment and len(comment) < 10:
             raise forms.ValidationError('Отзыв должен содержать минимум 10 символов')
         return comment
-
-class CategoryForm(forms.ModelForm):
-    """Форма для создания/редактирования категории"""
-    
-    class Meta:
-        model = Category
-        fields = ['name', 'slug', 'description', 'parent', 'image']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Описание категории...'}),
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название категории'}),
-        }
-    
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-        if Category.objects.filter(name=name).exists():
-            raise forms.ValidationError('Категория с таким названием уже существует')
-        return name

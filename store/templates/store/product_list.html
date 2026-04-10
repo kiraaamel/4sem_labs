@@ -2,42 +2,105 @@
 {% load store_filters %}
 {% load store_tags %}
 
-{% block title %}Товары{% endblock %}
+{% block title %}Каталог серебряных украшений{% endblock %}
 
 {% block content %}
 
-<h1>Ювелирные изделия</h1>
+{# ===== ВЕРХНЯЯ СТАТИСТИКА (Пункт 6: count и exists) ===== #}
+<div class="stats-bar" style="background: #3a4a5a; color: #e8dcc8; padding: 15px; border-radius: 10px; margin-bottom: 25px; display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <div>✨ Всего изделий: <strong>{{ total_products }}</strong></div>
+    <div>📦 В наличии: <strong>{{ in_stock_count }}</strong></div>
+    <div>🏷️ Скидки: {% if has_discounted_products %}🔥 Есть{% else %}Нет{% endif %}</div>
+    <div>⭐ Средняя цена: {{ stats.avg_price|rub_format }}</div>
+</div>
+
+{# ===== НОВИНКИ (Пункт 4: Limiting QuerySets - топ-5 новинок) ===== #}
+{% if top_5_new %}
+<div class="section-block" style="margin-bottom: 30px;">
+    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">🆕 Новинки коллекции</h2>
+    <div style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
+        {% for product in top_5_new %}
+        <div class="horizontal-card" style="min-width: 180px; background: white; border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+            {% endif %}
+            <h4 style="margin: 10px 0 5px;">{{ product.name|truncatechars:25 }}</h4>
+            <p class="product-price">{{ product.price|rub_format }}</p>
+            <a href="{{ product.get_absolute_url }}" class="btn-small">Подробнее</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ===== ЭКСКЛЮЗИВ (Пункт 4: Limiting QuerySets - топ-5 дорогих) ===== #}
+{% if top_5_expensive %}
+<div class="section-block" style="margin-bottom: 30px;">
+    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">💎 Эксклюзивные украшения</h2>
+    <div style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
+        {% for product in top_5_expensive %}
+        <div class="horizontal-card" style="min-width: 180px; background: white; border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+            {% endif %}
+            <h4 style="margin: 10px 0 5px;">{{ product.name|truncatechars:25 }}</h4>
+            <p class="product-price">{{ product.price|rub_format }}</p>
+            <a href="{{ product.get_absolute_url }}" class="btn-small">Подробнее</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ===== ПОПУЛЯРНЫЕ КАТЕГОРИИ (Пункт 5: values - список категорий) ===== #}
+{% if categories_list %}
+<div class="section-block" style="margin-bottom: 30px;">
+    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">📂 Популярные категории</h2>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        {% for cat in categories_list %}
+            <a href="{% url 'store:category' cat.slug %}" class="category-tag" style="background: #e8e0d5; padding: 8px 16px; border-radius: 25px; text-decoration: none; color: #2c3e50;">
+                {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ===== ТИПЫ СЕРЕБРА (Пункт 5: values_list - список типов) ===== #}
+{% if popular_silver_types %}
+<div class="section-block" style="margin-bottom: 30px;">
+    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">🏷️ Типы серебра</h2>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        {% for silver in popular_silver_types %}
+            <a href="?silver_type={{ silver }}" class="silver-tag" style="background: #d4c5b0; padding: 8px 16px; border-radius: 25px; text-decoration: none; color: #2c3e50;">
+                {{ silver|default:"Другое" }}
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ===== ОСНОВНОЙ КАТАЛОГ ===== #}
+<h1 style="margin-top: 20px;">Наши украшения из серебра</h1>
+
+{# Кнопка добавления товара (только для админов) #}
 {% if user.is_authenticated and user.is_staff %}
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 20px; text-align: right;">
         <a href="{% url 'store:product_create' %}" class="btn" style="background: #c9a96e; color: #2c3e50;">
-            ➕ Добавить новый товар
+            ➕ Добавить товар
         </a>
     </div>
 {% endif %}
-<div class="info-block">
-    {% current_time as now %}
-    <span>🕐 {{ now }}</span>
-    <span style="margin: 0 20px;">|</span>
-    <span>📊 Средняя цена: {{ stats.avg_price|rub_format }}</span>
-</div>
 
-{% popular_products 4 as popular %}
-<div class="popular-section">
-    <h3>🔥 Популярное этой недели</h3>
-    {% for p in popular %}
-        <a href="{{ p.get_absolute_url }}">{{ p.name }}</a> - {{ p.price|rub_format }}<br>
-    {% endfor %}
-</div>
-
-{% if user.is_authenticated and user.is_staff %}
-    <div style="margin-bottom: 20px;">
-        <a href="{% url 'store:product_create' %}" class="btn">➕ Добавить товар</a>
-    </div>
-{% endif %}
-
+{# Сетка товаров #}
 <div class="products-grid">
     {% for product in products %}
         <div class="product-card">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;">
+            {% else %}
+                <div style="width: 100%; height: 200px; background: #eee; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center;">Нет фото</div>
+            {% endif %}
             <h3>{{ product.name }}</h3>
             <p class="product-price">
                 {% if product.old_price %}
@@ -45,13 +108,12 @@
                 {% endif %}
                 {{ product.price|rub_format }}
             </p>
-            <p style="color: #7a8a9a; font-size: 12px;">{{ product.get_silver_type_display }}</p>
-            <p>{{ product.description|truncatechars:80 }}</p>
             <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
         </div>
     {% endfor %}
 </div>
 
+{# Пагинация #}
 <div class="pagination">
     {% if products.has_previous %}
         <a href="?page=1">« Первая</a>

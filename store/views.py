@@ -1,26 +1,25 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Sum, Avg, Count, Q
+from django.db.models import Sum, Avg, Count, Q, F
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.http import HttpResponseRedirect
-from .models import Product, Category, User, Order, Cart, CartItem, OrderItem
+from .models import Product, Category, User, Order, Cart, CartItem, OrderItem, Review
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm
 
 def product_list(request, category_slug=None):
-    # Пункт 6: filter()
+    # Пункт 6: filter() чтобы уточнить поиск применением нескольких фильтров сразу
     products = Product.objects.filter(stock_quantity__gt=0).select_related('category')
     category_name = request.GET.get('category_name')
     if category_name:
-        products = products.filter(category__name__icontains=category_name)
+        products = products.filter(category__name__icontains=category_name) #без учета регистра
     category = None
     if category_slug:
         # Пункт 11: get_object_or_404
         category = get_object_or_404(Category, slug=category_slug) #если категории нет - покажет страницу с ошибкой 404
-
         products = products.filter(category=category)
 
     silver_type = request.GET.get('silver_type')
@@ -36,8 +35,25 @@ def product_list(request, category_slug=None):
     sort_by = request.GET.get('sort', '-created_at') #Смотрим в URL параметр sort. Если его нет — сортируем по новизне (-created_at)
     products = products.order_by(sort_by) #Сортируем товары по тому полю, которое пришло в параметре sort
     
+    # 5 самых дорогих товаров для блока "Эксклюзив"
+    top_5_expensive = Product.objects.filter(stock_quantity__gt=0).order_by('-price')[:5] #ограничения кол-ва
+    # 5 последних новинок для блока "Новинки"
+    top_5_new = Product.objects.filter(stock_quantity__gt=0).order_by('-created_at')[:5]
+    
+    #Пункт 5: values() и values_list()
+    # values() - для быстрого получения данных (используем для списка категорий)
+    categories_list = Category.objects.values('id', 'name', 'slug')[:6] #возвращает список словарей с указанными полями
+    # values_list() - для простого списка (используем для типов серебра)
+    popular_silver_types = Product.objects.values_list('silver_type', flat=True).distinct()[:4] #возвращает список кортежей
+    
+    # Пункт 6: count() и exists()
+    total_products = Product.objects.count() #кол-во записей
+    has_products = Product.objects.exists() #проверка есть ли хотя бы одна запись
+    has_discounted_products = Product.objects.filter(old_price__isnull=False, old_price__gt=F('price')).exists()
+    in_stock_count = Product.objects.filter(stock_quantity__gt=0).count()
+    
     # Пункт 14: пагинация + try except
-    paginator = Paginator(products, 12) #12 товаров на страницу
+    paginator = Paginator(products, 9) #9 товаров на страницу (3x3 сетка)
     page = request.GET.get('page', 1) #получаем номер страницы из URL
     try:
         #достает нужную страницу
@@ -59,6 +75,15 @@ def product_list(request, category_slug=None):
         'products': products_page,
         'category': category,
         'stats': stats,
+        # Добавленные переменные для блоков на сайте:
+        'top_5_expensive': top_5_expensive,
+        'top_5_new': top_5_new,
+        'categories_list': categories_list,
+        'popular_silver_types': popular_silver_types,
+        'total_products': total_products,
+        'has_products': has_products,
+        'has_discounted_products': has_discounted_products,
+        'in_stock_count': in_stock_count,
     })
 
 # Пункт 11,13: get_object_or_404, get_absolute_url
@@ -67,17 +92,35 @@ def product_detail(request, product_id, slug=None):
         Product.objects.select_related('category', 'created_by'),
         id=product_id
     ) #если товара нет - страница 404
-    return render(request, 'store/product_detail.html', {'product': product})
+    
+    # Логика для отзывов
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, request.FILES) #словарь с загруженными файлами
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.user = request.user
+            review.product = product
+            review.save()
+            messages.success(request, 'Спасибо за ваш отзыв!')
+            return redirect('store:product_detail', product_id=product.id, slug=product.slug) #перенаправление на детальную страницу товара
+    else:
+        form = ReviewForm()
+    
+    return render(request, 'store/product_detail.html', {
+        'product': product,
+        'review_form': form
+    })
 
 # Пункт 19: аутентификация
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
-        if form.is_valid():
+        if form.is_valid(): #проверяет прошла ли форма валидацию
+            email = form.cleaned_data.get('email') #приводит данные к норм виду, в данном случае к нижнему регистру
             user = form.save()
             login(request, user)
             messages.success(request, f'Добро пожаловать, {user.first_name}!')
-            return redirect('store:product_list')
+            return redirect('store:product_list') #перенаправление на главную страницу
     else:
         form = UserRegistrationForm()
     return render(request, 'store/register.html', {'form': form})
@@ -176,26 +219,21 @@ def product_delete(request, product_id):
         return redirect('store:product_list')
     return render(request, 'store/product_confirm_delete.html', {'product': product})
 
-# Добавление товара в корзину
 @login_required
 def add_to_cart(request, product_id):
+    """Добавление товара в корзину (только для авторизованных)"""
+    # Для гостей можно убрать @login_required, но это сложнее
+    # Оставляем как есть для простоты
     product = get_object_or_404(Product, id=product_id)
-    
-    # Получаем или создаём корзину пользователя
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    
-    # Получаем или создаём позицию в корзине
+    cart = get_cart(request)
     cart_item, created = CartItem.objects.get_or_create(
         cart=cart,
         product=product,
         defaults={'quantity': 1}
     )
-    
-    # Если позиция уже была, увеличиваем количество
     if not created:
         cart_item.quantity += 1
         cart_item.save()
-    
     messages.success(request, f'Товар "{product.name}" добавлен в корзину')
     return redirect('store:cart_detail')
 
@@ -225,8 +263,8 @@ def update_cart_quantity(request, item_id):
     return redirect('store:cart_detail')
 
 def cart_detail(request):
-    """Корзина пользователя"""
-    cart = Cart.objects.get(user=request.user)
+    """Корзина пользователя (работает и для гостей)"""
+    cart = get_cart(request)
     items = cart.items.select_related('product', 'product__category')
     return render(request, 'store/cart.html', {'cart': cart, 'items': items})
 
@@ -286,3 +324,17 @@ def order_detail(request, order_number):
 def my_orders(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'store/my_orders.html', {'orders': orders})
+
+def get_cart(request):
+    """Получение корзины для пользователя или гостя (через сессию)"""
+    if request.user.is_authenticated:
+        # Авторизованный пользователь
+        cart, created = Cart.objects.get_or_create(user=request.user)
+    else:
+        # Гость — используем сессию
+        session_key = request.session.session_key #Уникальный ключ сессии для этого браузера
+        if not session_key:
+            request.session.create() #создание новой сессии, если её нет
+            session_key = request.session.session_key
+        cart, created = Cart.objects.get_or_create(session_key=session_key, user=None) #cоздание корзины для гостя
+    return cart
