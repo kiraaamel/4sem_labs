@@ -2,63 +2,53 @@
 {% load store_filters %}
 {% load store_tags %}
 
-{% block title %}Каталог серебряных украшений{% endblock %}
+{% block title %}ArgenticJewelry - серебряные украшения{% endblock %}
 
 {% block content %}
 
-{# ===== ВЕРХНЯЯ СТАТИСТИКА (Пункт 6: count и exists) ===== #}
-<div class="stats-bar" style="background: #3a4a5a; color: #e8dcc8; padding: 15px; border-radius: 10px; margin-bottom: 25px; display: flex; justify-content: space-around; flex-wrap: wrap;">
+{# СТАТИСТИКА (только для админов) #}
+{% if user.is_staff %}
+<div class="stats">
     <div>✨ Всего изделий: <strong>{{ total_products }}</strong></div>
     <div>📦 В наличии: <strong>{{ in_stock_count }}</strong></div>
-    <div>🏷️ Скидки: {% if has_discounted_products %}🔥 Есть{% else %}Нет{% endif %}</div>
-    <div>⭐ Средняя цена: {{ stats.avg_price|rub_format }}</div>
+    <div>🏷️ Скидки: <strong>{% if has_discounted_products %}есть 🔥{% else %}нет{% endif %}</strong></div>
+    <div>⭐ Средняя цена: <strong>{{ stats.avg_price|rub_format }}</strong></div>
+</div>
+{% endif %}
+
+<div class="welcome-banner">
+    <h1>✨ ArgenticJewelry ✨</h1>
+    <p>Добро пожаловать в лучший магазин ювелирных изделий из серебра!</p>
+    <a href="{% url 'store:catalog' %}" class="btn" style="background: #c9a96e; color: white;">Перейти в каталог →</a>
 </div>
 
-{# ===== НОВИНКИ (Пункт 4: Limiting QuerySets - топ-5 новинок) ===== #}
 {% if top_5_new %}
-<div class="section-block" style="margin-bottom: 30px;">
-    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">🆕 Новинки коллекции</h2>
-    <div style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
+<div class="section">
+    <h2>🆕 Новинки коллекции</h2>
+    <div class="horizontal-scroll">
         {% for product in top_5_new %}
-        <div class="horizontal-card" style="min-width: 180px; background: white; border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
-            {% endif %}
-            <h4 style="margin: 10px 0 5px;">{{ product.name|truncatechars:25 }}</h4>
-            <p class="product-price">{{ product.price|rub_format }}</p>
-            <a href="{{ product.get_absolute_url }}" class="btn-small">Подробнее</a>
-        </div>
+            <div class="mini-card">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="no-image" style="height: 160px;">Нет фото</div>
+                {% endif %}
+                <h3>{{ product.name|truncatechars:25 }}</h3>
+                <div class="price">{{ product.price|rub_format }}</div>
+                <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
+            </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
-{# ===== ЭКСКЛЮЗИВ (Пункт 4: Limiting QuerySets - топ-5 дорогих) ===== #}
-{% if top_5_expensive %}
-<div class="section-block" style="margin-bottom: 30px;">
-    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">💎 Эксклюзивные украшения</h2>
-    <div style="display: flex; gap: 15px; overflow-x: auto; padding: 10px 0;">
-        {% for product in top_5_expensive %}
-        <div class="horizontal-card" style="min-width: 180px; background: white; border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
-            {% endif %}
-            <h4 style="margin: 10px 0 5px;">{{ product.name|truncatechars:25 }}</h4>
-            <p class="product-price">{{ product.price|rub_format }}</p>
-            <a href="{{ product.get_absolute_url }}" class="btn-small">Подробнее</a>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
-{# ===== ПОПУЛЯРНЫЕ КАТЕГОРИИ (Пункт 5: values - список категорий) ===== #}
+{# ПОПУЛЯРНЫЕ КАТЕГОРИИ (кнопки ведут в каталог с фильтром) #}
 {% if categories_list %}
-<div class="section-block" style="margin-bottom: 30px;">
-    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">📂 Популярные категории</h2>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+<div class="section">
+    <h2>⭐ Популярные категории</h2>
+    <div class="tags">
         {% for cat in categories_list %}
-            <a href="{% url 'store:category' cat.slug %}" class="category-tag" style="background: #e8e0d5; padding: 8px 16px; border-radius: 25px; text-decoration: none; color: #2c3e50;">
+            <a href="{% url 'store:catalog' %}?category={{ cat.slug }}" class="category-tag">
                 {{ cat.name }}
             </a>
         {% endfor %}
@@ -66,66 +56,36 @@
 </div>
 {% endif %}
 
-{# ===== ТИПЫ СЕРЕБРА (Пункт 5: values_list - список типов) ===== #}
+{# ПОПУЛЯРНЫЕ ТИПЫ СЕРЕБРА (кнопки ведут в каталог с фильтром) #}
 {% if popular_silver_types %}
-<div class="section-block" style="margin-bottom: 30px;">
-    <h2 style="border-left: 4px solid #c9a96e; padding-left: 15px;">🏷️ Типы серебра</h2>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        {% for silver in popular_silver_types %}
-            <a href="?silver_type={{ silver }}" class="silver-tag" style="background: #d4c5b0; padding: 8px 16px; border-radius: 25px; text-decoration: none; color: #2c3e50;">
-                {{ silver|default:"Другое" }}
+<div class="section">
+    <h2>✨ Популярные типы серебра</h2>
+    <div class="tags">
+        {% for silver_code in popular_silver_types %}
+            <a href="{% url 'store:catalog' %}?silver_type={{ silver_code }}" class="silver-tag">
+                {% if silver_code == 'sterling' %}
+                    Стерлинговое серебро
+                {% elif silver_code == 'fine' %}
+                    Чистое серебро (999)
+                {% elif silver_code == 'argentium' %}
+                    Аргентиум
+                {% elif silver_code == 'mexican' %}
+                    Мексиканское серебро
+                {% elif silver_code == 'oxidized' %}
+                    Оксидированное серебро
+                {% elif silver_code == 'rhodium_plated' %}
+                    С родиевым покрытием
+                {% elif silver_code == 'black' %}
+                    Чернёное серебро
+                {% elif silver_code == 'matte' %}
+                    Матовое серебро
+                {% else %}
+                    {{ silver_code|default:"Другое" }}
+                {% endif %}
             </a>
         {% endfor %}
     </div>
 </div>
 {% endif %}
-
-{# ===== ОСНОВНОЙ КАТАЛОГ ===== #}
-<h1 style="margin-top: 20px;">Наши украшения из серебра</h1>
-
-{# Кнопка добавления товара (только для админов) #}
-{% if user.is_authenticated and user.is_staff %}
-    <div style="margin-bottom: 20px; text-align: right;">
-        <a href="{% url 'store:product_create' %}" class="btn" style="background: #c9a96e; color: #2c3e50;">
-            ➕ Добавить товар
-        </a>
-    </div>
-{% endif %}
-
-{# Сетка товаров #}
-<div class="products-grid">
-    {% for product in products %}
-        <div class="product-card">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;">
-            {% else %}
-                <div style="width: 100%; height: 200px; background: #eee; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center;">Нет фото</div>
-            {% endif %}
-            <h3>{{ product.name }}</h3>
-            <p class="product-price">
-                {% if product.old_price %}
-                    <span class="product-old-price">{{ product.old_price|rub_format }}</span>
-                {% endif %}
-                {{ product.price|rub_format }}
-            </p>
-            <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
-        </div>
-    {% endfor %}
-</div>
-
-{# Пагинация #}
-<div class="pagination">
-    {% if products.has_previous %}
-        <a href="?page=1">« Первая</a>
-        <a href="?page={{ products.previous_page_number }}">Назад</a>
-    {% endif %}
-
-    <span class="current">Страница {{ products.number }} из {{ products.paginator.num_pages }}</span>
-
-    {% if products.has_next %}
-        <a href="?page={{ products.next_page_number }}">Вперёд</a>
-        <a href="?page={{ products.paginator.num_pages }}">Последняя »</a>
-    {% endif %}
-</div>
 
 {% endblock %}

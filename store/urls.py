@@ -4,6 +4,7 @@ app_name = 'store'
 urlpatterns = [
     # Главная
     path('', views.product_list, name='product_list'),
+    path('catalog/', views.catalog, name='catalog'),  
     path('category/<slug:category_slug>/', views.product_list, name='category'),
     
     # 👇 КОНКРЕТНЫЕ МАРШРУТЫ ДОЛЖНЫ БЫТЬ ПЕРВЫМИ 👇
@@ -14,6 +15,7 @@ urlpatterns = [
     # 👇 ОБЩИЙ МАРШРУТ (с slug) ДОЛЖЕН БЫТЬ ПОСЛЕДНИМ 👇
     path('product/<int:product_id>/<slug:slug>/', views.product_detail, name='product_detail'),
     
+
     # Корзина
     path('cart/', views.cart_detail, name='cart_detail'),
     path('cart/add/<int:product_id>/', views.add_to_cart, name='add_to_cart'),

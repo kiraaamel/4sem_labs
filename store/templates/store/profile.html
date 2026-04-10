@@ -7,40 +7,78 @@
 
 <h1>Личный кабинет</h1>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-    <div class="product-card" style="text-align: left;">
+<div class="profile-grid">
+    <!-- ЛЕВАЯ КАРТОЧКА: ИНФОРМАЦИЯ -->
+    <div class="profile-card">
         <h3>Информация о вас</h3>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Имя:</strong> {{ user.first_name|default:"не указано" }}</p>
-        <p><strong>Фамилия:</strong> {{ user.last_name|default:"не указано" }}</p>
-        <p><strong>Телефон:</strong> {{ user.phone|default:"не указан" }}</p>
-        <p><strong>Бонусные баллы:</strong> 🎁 {{ user.bonus_points }}</p>
+        <div class="profile-info">
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Имя:</span>
+                <span class="info-value">{{ user.first_name|default:"не указано" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Фамилия:</span>
+                <span class="info-value">{{ user.last_name|default:"не указано" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Телефон:</span>
+                <span class="info-value">{{ user.phone|default:"не указан" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Бонусные баллы:</span>
+                <span class="info-value bonus">{{ user.bonus_points }}</span>
+            </div>
+        </div>
     </div>
-    
-    <div class="product-card" style="text-align: left;">
+
+    <!-- ПРАВАЯ КАРТОЧКА: СТАТИСТИКА -->
+    <div class="profile-card">
         <h3>Статистика</h3>
-        <p><strong>Всего заказов:</strong> {{ orders|length }}</p>
-        <p><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y" }}</p>
+        <div class="profile-info">
+            <div class="info-row">
+                <span class="info-label">Всего заказов:</span>
+                <span class="info-value">{{ orders|length }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Дата регистрации:</span>
+                <span class="info-value">{{ user.date_joined|date:"d.m.Y" }}</span>
+            </div>
+        </div>
     </div>
 </div>
 
-<h2 style="margin: 30px 0 20px 0;">📦 Мои заказы</h2>
+<h2 class="orders-title">Мои заказы</h2>
 
 {% if orders %}
-    {% for order in orders %}
-        <div class="product-card" style="text-align: left; margin-bottom: 15px;">
-            <p><strong>Заказ #{{ order.order_number }}</strong></p>
-            <p>Дата: {{ order.created_at|date:"d.m.Y" }}</p>
-            <p>Статус: {{ order.get_status_display }}</p>
-            <p>Сумма: {{ order.total_price|rub_format }}</p>
-        </div>
-    {% endfor %}
+    <div class="orders-list">
+        {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-number">Заказ #{{ order.order_number }}</span>
+                    <span class="order-status">{{ order.get_status_display }}</span>
+                </div>
+                <div class="order-details">
+                    <div class="order-date">📅 {{ order.created_at|date:"d.m.Y" }}</div>
+                    <div class="order-sum">Сумма: {{ order.total_price|rub_format }}</div>
+                </div>
+                <div class="order-actions">
+                    <a href="{% url 'store:order_detail' order.order_number %}" class="btn-small">Детали заказа</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 {% else %}
-    <p>У вас пока нет заказов</p>
+    <div class="empty-orders">
+        <p>У вас пока нет заказов</p>
+    </div>
 {% endif %}
 
-<div style="text-align: center; margin-top: 30px;">
-    <a href="{% url 'store:logout' %}" class="btn">Выйти из аккаунта</a>
+<div class="logout-section">
+    <a href="{% url 'store:logout' %}" class="btn logout-btn">Выйти из аккаунта</a>
 </div>
 
 {% endblock %}

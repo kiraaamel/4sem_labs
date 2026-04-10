@@ -1,146 +1,459 @@
 {% extends 'base.html' %}
 {% load store_filters %}
 
-{% block title %}{{ product.name }}{% endblock %}
+{% block title %}{{ product.name }} - ArgenticJewelry{% endblock %}
 
 {% block content %}
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-    {# Левая колонка — фото #}
-    <div>
-        {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; border-radius: 10px;">
-        {% else %}
-            <div style="background: #eee; padding: 100px; text-align: center; border-radius: 10px;">Нет фото</div>
-        {% endif %}
-        
-        {# Дополнительные фото #}
-        {% if product.image_2 or product.image_3 or product.image_4 or product.image_5 %}
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                {% if product.image_2 %}<img src="{{ product.image_2.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
-                {% if product.image_3 %}<img src="{{ product.image_3.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
-                {% if product.image_4 %}<img src="{{ product.image_4.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
-                {% if product.image_5 %}<img src="{{ product.image_5.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">{% endif %}
+<div class="product-page">
+    <div class="product-container">
+        <!-- ЛЕВАЯ КОЛОНКА - ФОТО -->
+        <div class="product-gallery">
+            <div class="main-image">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" id="mainProductImage">
+                {% else %}
+                    <div class="no-image">📷 Нет фото</div>
+                {% endif %}
             </div>
-        {% endif %}
-        
-        {# Ссылка на инструкцию #}
-        {% if product.instruction_file %}
-            <div style="margin-top: 20px;">
-                <a href="{{ product.instruction_file.url }}" target="_blank" class="btn" style="background: #7a8a9a; display: block; text-align: center;">
-                    📄 Скачать инструкцию (PDF)
-                </a>
+            
+            {% if product.image_2 or product.image_3 or product.image_4 or product.image_5 %}
+                <div class="thumbnail-list">
+                    {% if product.image %}
+                        <div class="thumbnail active" data-image="{{ product.image.url }}">
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                        </div>
+                    {% endif %}
+                    {% if product.image_2 %}
+                        <div class="thumbnail" data-image="{{ product.image_2.url }}">
+                            <img src="{{ product.image_2.url }}" alt="Фото 2">
+                        </div>
+                    {% endif %}
+                    {% if product.image_3 %}
+                        <div class="thumbnail" data-image="{{ product.image_3.url }}">
+                            <img src="{{ product.image_3.url }}" alt="Фото 3">
+                        </div>
+                    {% endif %}
+                    {% if product.image_4 %}
+                        <div class="thumbnail" data-image="{{ product.image_4.url }}">
+                            <img src="{{ product.image_4.url }}" alt="Фото 4">
+                        </div>
+                    {% endif %}
+                    {% if product.image_5 %}
+                        <div class="thumbnail" data-image="{{ product.image_5.url }}">
+                            <img src="{{ product.image_5.url }}" alt="Фото 5">
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА - ИНФОРМАЦИЯ -->
+        <div class="product-info">
+            <h1 class="product-title">{{ product.name }}</h1>
+            
+            <div class="product-price">
+                {% if product.old_price %}
+                    <span class="old-price">{{ product.old_price|rub_format }}</span>
+                {% endif %}
+                <span class="current-price">{{ product.price|rub_format }}</span>
             </div>
-        {% endif %}
-        
-        {# Внешняя ссылка #}
-        {% if product.external_link %}
-            <div style="margin-top: 10px;">
-                <a href="{{ product.external_link }}" target="_blank" class="btn" style="background: #3a4a5a; display: block; text-align: center;">
-                    🔗 Подробнее на сайте
-                </a>
+            
+            <div class="product-meta">
+                <div class="meta-row">
+                    <span class="meta-label">Категория:</span>
+                    <span class="meta-value">{{ product.category.name }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Тип серебра:</span>
+                    <span class="meta-value">{{ product.get_silver_type_display }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Проба:</span>
+                    <span class="meta-value">{{ product.get_fineness_display }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Вес:</span>
+                    <span class="meta-value">{{ product.weight }} г</span>
+                </div>
+                {% if product.size %}
+                <div class="meta-row">
+                    <span class="meta-label">Размер:</span>
+                    <span class="meta-value">{{ product.size }}</span>
+                </div>
+                {% endif %}
             </div>
-        {% endif %}
+            
+            <div class="stock-status">
+                {% if product.available_quantity > 0 %}
+                    <span class="in-stock">✓ В наличии ({{ product.available_quantity }} шт)</span>
+                {% else %}
+                    <span class="out-of-stock">✗ Нет в наличии</span>
+                {% endif %}
+            </div>
+            
+            {% if product.available_quantity > 0 %}
+                <form method="post" action="{% url 'store:add_to_cart' product.id %}" class="add-to-cart-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="quantity" id="quantity" value="1">
+                    <button type="submit" class="add-to-cart-btn">🛒 Добавить в корзину</button>
+                </form>
+            {% endif %}
+            
+            <div class="product-links">
+                {% if product.instruction_file %}
+                    <a href="{{ product.instruction_file.url }}" target="_blank" class="link-btn">📄 Инструкция</a>
+                {% endif %}
+                {% if product.external_link %}
+                    <a href="{{ product.external_link }}" target="_blank" class="link-btn">🔗 Подробнее</a>
+                {% endif %}
+            </div>
+            
+            {% if user.is_authenticated and user.is_staff %}
+                <div class="admin-buttons">
+                    <a href="{% url 'store:product_edit' product.id %}" class="admin-edit">✏️ Редактировать</a>
+                    <a href="{% url 'store:product_delete' product.id %}" class="admin-delete">🗑️ Удалить</a>
+                </div>
+            {% endif %}
+        </div>
     </div>
     
-    {# Правая колонка — информация о товаре #}
-    <div>
-        <h1>{{ product.name }}</h1>
-        
-        <p class="product-price" style="font-size: 32px;">
-            {% if product.old_price %}
-                <span class="product-old-price" style="font-size: 20px;">{{ product.old_price|rub_format }}</span>
-            {% endif %}
-            <span style="color: #c9a96e;">{{ product.price|rub_format }}</span>
-        </p>
-        
-        <p><strong>Категория:</strong> {{ product.category.name }}</p>
-        <p><strong>Тип серебра:</strong> {{ product.get_silver_type_display }}</p>
-        <p><strong>Проба:</strong> {{ product.get_fineness_display }}</p>
-        <p><strong>Вес:</strong> {{ product.weight }} г</p>
-        {% if product.size %}
-            <p><strong>Размер:</strong> {{ product.size }}</p>
-        {% endif %}
-        {% if product.stones %}
-            <p><strong>Камни:</strong> {{ product.get_stone_type_display }}</p>
-        {% endif %}
-        
-        <p><strong>Наличие:</strong> 
-            {% if product.available_quantity > 0 %}
-                <span style="color: green;">В наличии ({{ product.available_quantity }} шт)</span>
-            {% else %}
-                <span style="color: red;">Нет в наличии</span>
-            {% endif %}
-        </p>
-        
-        <p><strong>Описание:</strong></p>
+    <!-- ОПИСАНИЕ -->
+    <div class="product-description">
+        <h3>Описание</h3>
         <p>{{ product.description|linebreaks }}</p>
+    </div>
+    
+    <!-- ОТЗЫВЫ -->
+    <div class="reviews-section">
+        <h3>⭐ Отзывы ({{ product.reviews.count }})</h3>
         
-        {# Кнопка в корзину #}
-        {% if product.available_quantity > 0 %}
-            <form method="post" action="{% url 'store:add_to_cart' product.id %}" style="margin-top: 20px;">
-                {% csrf_token %}
-                <button type="submit" class="btn" style="background: #c9a96e; color: #2c3e50; font-size: 18px; padding: 12px 30px; width: 100%;">
-                    🛒 Добавить в корзину
-                </button>
-            </form>
+        {% if product.reviews.all %}
+            {% for review in product.reviews.all %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <strong>{{ review.user.email|truncatechars:20 }}</strong>
+                        <span class="review-rating">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    <p class="review-comment">{{ review.comment }}</p>
+                    <small class="review-date">{{ review.created_at|date:"d.m.Y" }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-reviews">Пока нет отзывов. Будьте первым!</p>
         {% endif %}
         
-        {# Кнопки админа #}
-        {% if user.is_authenticated and user.is_staff %}
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <a href="{% url 'store:product_edit' product.id %}" class="btn" style="flex: 1;">✏️ Редактировать</a>
-                <a href="{% url 'store:product_delete' product.id %}" class="btn" style="background: #c0392b; flex: 1;">🗑️ Удалить</a>
+        {% if user.is_authenticated %}
+            <div class="review-form">
+                <h4>Оставить отзыв</h4>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in review_form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="error">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit">Отправить</button>
+                </form>
             </div>
+        {% else %}
+            <p class="login-to-review"><a href="{% url 'store:login' %}">Войдите</a>, чтобы оставить отзыв</p>
         {% endif %}
     </div>
 </div>
 
-{# Блок отзывов #}
-<div style="margin-top: 50px;">
-    <h3>⭐ Отзывы покупателей</h3>
+<style>
+    .product-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
     
-    {% if product.reviews.all %}
-        {% for review in product.reviews.all %}
-            <div class="product-card" style="margin-bottom: 15px; text-align: left;">
-                <div style="display: flex; justify-content: space-between;">
-                    <strong>{{ review.user.email }}</strong>
-                    <span style="color: gold;">{{ review.rating }} ★</span>
-                </div>
-                <p>{{ review.comment }}</p>
-                {% if review.image %}
-                    <img src="{{ review.image.url }}" style="max-height: 100px; border-radius: 5px;">
-                {% endif %}
-                <small style="color: #7a8a9a;">{{ review.created_at|date:"d.m.Y" }}</small>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>Пока нет отзывов. Будьте первым!</p>
-    {% endif %}
+    .product-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-bottom: 40px;
+    }
     
-    {# Форма добавления отзыва #}
-    {% if user.is_authenticated %}
-        <div class="product-card" style="margin-top: 20px;">
-            <h4>📝 Оставить отзыв</h4>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {% for field in review_form %}
-                    <div class="form-group">
-                        {{ field.label_tag }} 
-                        {{ field }} 
-                        {% if field.errors %} 
-                            <div class="error" style="color: #c0392b;">{{ field.errors }}</div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-                <button type="submit">Отправить отзыв</button>
-            </form>
-        </div>
-    {% else %}
-        <div class="product-card" style="margin-top: 20px; text-align: center;">
-            <p><a href="{% url 'store:login' %}">Войдите</a>, чтобы оставить отзыв.</p>
-        </div>
-    {% endif %}
-</div>
+    /* ГАЛЕРЕЯ */
+    .main-image {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 1px solid #e8e0d5;
+    }
+    
+    .main-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+    }
+    
+    .no-image {
+        aspect-ratio: 1 / 1;
+        background: #f5f0e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: #b8a99a;
+    }
+    
+    .thumbnail-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .thumbnail.active {
+        border-color: #c9a96e;
+    }
+    
+    /* ИНФОРМАЦИЯ */
+    .product-title {
+        font-size: 28px;
+        color: #2c3e50;
+        margin: 0 0 15px 0;
+    }
+    
+    .product-price {
+        background: #f5f0e8;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .current-price {
+        font-size: 28px;
+        font-weight: bold;
+        color: #c9a96e;
+    }
+    
+    .old-price {
+        font-size: 18px;
+        color: #999;
+        text-decoration: line-through;
+        margin-right: 10px;
+    }
+    
+    .product-meta {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #e8e0d5;
+    }
+    
+    .meta-row {
+        display: flex;
+        padding: 6px 0;
+        border-bottom: 1px dashed #e8e0d5;
+    }
+    
+    .meta-row:last-child {
+        border-bottom: none;
+    }
+    
+    .meta-label {
+        width: 100px;
+        color: #7a8a9a;
+    }
+    
+    .meta-value {
+        color: #2c3e50;
+    }
+    
+    .stock-status {
+        margin-bottom: 20px;
+    }
+    
+    .in-stock {
+        color: #27ae60;
+        font-weight: bold;
+    }
+    
+    .out-of-stock {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
+    .add-to-cart-btn {
+        width: 100%;
+        background: #c9a96e;
+        color: #2c3e50;
+        border: none;
+        padding: 14px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .add-to-cart-btn:hover {
+        background: #b8955a;
+    }
+    
+    .product-links {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    .link-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        background: #f5f0e8;
+        border-radius: 25px;
+        text-decoration: none;
+        color: #3a4a5a;
+        font-size: 13px;
+    }
+    
+    .admin-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e8e0d5;
+    }
+    
+    .admin-edit, .admin-delete {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    
+    .admin-edit {
+        background: #3a4a5a;
+        color: white;
+    }
+    
+    .admin-delete {
+        background: #c0392b;
+        color: white;
+    }
+    
+    /* ОПИСАНИЕ */
+    .product-description {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 40px;
+        border: 1px solid #e8e0d5;
+    }
+    
+    .product-description h3 {
+        margin: 0 0 15px 0;
+    }
+    
+    /* ОТЗЫВЫ */
+    .reviews-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e8e0d5;
+    }
+    
+    .reviews-section h3 {
+        margin: 0 0 20px 0;
+    }
+    
+    .review-card {
+        background: #fefcf8;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e8e0d5;
+    }
+    
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .review-rating {
+        color: #f39c12;
+    }
+    
+    .review-comment {
+        margin: 10px 0;
+        color: #4a5a6a;
+    }
+    
+    .review-date {
+        color: #7a8a9a;
+        font-size: 12px;
+    }
+    
+    .no-reviews, .login-to-review {
+        text-align: center;
+        padding: 20px;
+        color: #7a8a9a;
+    }
+    
+    .review-form {
+        background: #fefcf8;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    /* АДАПТИВ */
+    @media (max-width: 768px) {
+        .product-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .product-title {
+            font-size: 22px;
+        }
+    }
+</style>
+
+<script>
+    // Переключение главного фото
+    document.querySelectorAll('.thumbnail').forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const imageUrl = this.dataset.image;
+            const mainImage = document.getElementById('mainProductImage');
+            if (mainImage) mainImage.src = imageUrl;
+            
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+</script>
 
 {% endblock %}

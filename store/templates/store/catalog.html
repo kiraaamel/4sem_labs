@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load store_filters %}
+
+{% block title %}Каталог - SilverShop{% endblock %}
+
+{% block content %}
+
+<div style="display: flex; gap: 30px;">
+    
+    {# БЛОК ФИЛЬТРОВ (слева) #}
+    <div style="width: 260px; flex-shrink: 0;">
+        <div class="filter-box">
+            <h3>Фильтры</h3>
+            
+            <form method="get" action="{% url 'store:catalog' %}">
+                <!-- Поиск (__icontains) -->
+                <div class="filter-group">
+                    <label>Поиск по названию:</label>
+                    <input type="text" name="search" placeholder="Например: кольцо" value="{{ search_query|default:'' }}">
+                </div>
+                {# Категория #}
+                <div class="filter-group">
+                    <label>Категория:</label>
+                    <select name="category">
+                        <option value="">Все категории</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if current_category == cat.slug %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                {# Тип серебра #}
+                <div class="filter-group">
+                    <label>Тип серебра:</label>
+                    <select name="silver_type">
+                        <option value="">Все типы</option>
+                        {% for code, name in silver_types %}
+                            <option value="{{ code }}" {% if current_silver_type == code %}selected{% endif %}>
+                                {{ name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                {# Цена #}
+                <div class="filter-group">
+                    <label>Цена (₽):</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" name="min_price" placeholder="от" value="{{ current_min_price|default:'' }}" style="width: 100px;">
+                        <input type="number" name="max_price" placeholder="до" value="{{ current_max_price|default:'' }}" style="width: 100px;">
+                    </div>
+                </div>
+                
+                {# Без скидки #}
+                <div class="filter-group">
+                    <label>
+                        <input type="checkbox" name="no_discount" value="1" {% if current_no_discount %}checked{% endif %}>
+                        Только без скидки
+                    </label>
+                </div>
+                
+                {# Кнопки #}
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="submit" class="btn" style="background: #c9a96e; color: white;">Применить</button>
+                    <a href="{% url 'store:catalog' %}" class="btn" style="background: #7a8a9a; color: white;">Сбросить</a>
+                </div>
+            </form>
+        </div>
+        
+        {# БЛОК СОРТИРОВКИ #}
+        <div class="filter-box" style="margin-top: 20px;">
+            <h3>Сортировка</h3>
+            <form method="get" action="{% url 'store:catalog' %}">
+                {# Сохраняем текущие фильтры #}
+                {% if current_category %}
+                    <input type="hidden" name="category" value="{{ current_category }}">
+                {% endif %}
+                {% if current_silver_type %}
+                    <input type="hidden" name="silver_type" value="{{ current_silver_type }}">
+                {% endif %}
+                {% if current_min_price %}
+                    <input type="hidden" name="min_price" value="{{ current_min_price }}">
+                {% endif %}
+                {% if current_max_price %}
+                    <input type="hidden" name="max_price" value="{{ current_max_price }}">
+                {% endif %}
+                {% if current_no_discount %}
+                    <input type="hidden" name="no_discount" value="1">
+                {% endif %}
+                
+                <select name="sort" onchange="this.form.submit()" style="width: 100%; padding: 8px;">
+                    <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Новинки</option>
+                    <option value="price" {% if current_sort == 'price' %}selected{% endif %}>Сначала дешёвые</option>
+                    <option value="-price" {% if current_sort == '-price' %}selected{% endif %}>Сначала дорогие</option>
+                    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>По алфавиту (А-Я)</option>
+                    <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>По алфавиту (Я-А)</option>
+                </select>
+            </form>
+        </div>
+    </div>
+    
+    {# СЕТКА ТОВАРОВ #}
+    <div style="flex: 1;">
+        <h1 style="margin-top: 0;">❀ Каталог</h1>
+        
+        <div class="products-grid">
+            {% for product in products %}
+                <div class="product-card">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="no-image">⚠️ Нет фото</div>
+                    {% endif %}
+                    
+                    <h3>{{ product.name }}</h3>
+                    
+                    <div class="product-price">
+                        {% if product.old_price %}
+                            <span class="product-old-price">{{ product.old_price|rub_format }}</span>
+                        {% endif %}
+                        {{ product.price|rub_format }}
+                    </div>
+                    
+                    <a href="{{ product.get_absolute_url }}" class="btn">Подробнее</a>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 50px;">
+                    <p>Товары не найдены</p>
+                    <a href="{% url 'store:catalog' %}" class="btn">Сбросить фильтры</a>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {# Пагинация #}
+        <div class="pagination">
+            {% if products.has_previous %}
+                <a href="?page=1">« Первая</a>
+                <a href="?page={{ products.previous_page_number }}">‹ Назад</a>
+            {% endif %}
+            
+            <span class="current">Страница {{ products.number }} из {{ products.paginator.num_pages }}</span>
+            
+            {% if products.has_next %}
+                <a href="?page={{ products.next_page_number }}">Вперёд ›</a>
+                <a href="?page={{ products.paginator.num_pages }}">Последняя »</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

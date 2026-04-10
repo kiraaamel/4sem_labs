@@ -32,7 +32,7 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         #какие поля включаем
-        fields = ['name', 'slug', 'description', 'price', 'old_price', 
+        fields = ['name', 'description', 'price', 'old_price', 
                   'stock_quantity', 'category', 'silver_type', 'fineness',
                   'weight', 'size', 'stones', 'stone_type', 'stone_weight',
                   'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5',
