@@ -682,14 +682,16 @@ class CollectionProduct(models.Model):
     collection = models.ForeignKey(
         'Collection', 
         on_delete=models.CASCADE,
-        related_name='collection_products'
+        related_name='collection_products',
+        verbose_name='Коллекция'
     )
     
     # Ссылка на товар
     product = models.ForeignKey(
         'Product', 
         on_delete=models.CASCADE,
-        related_name='product_collections'
+        related_name='product_collections',
+        verbose_name='Товар коллекции'
     )
     
     # доп поля
@@ -699,6 +701,8 @@ class CollectionProduct(models.Model):
     class Meta:
         unique_together = ['collection', 'product']  # товар не может быть в коллекции дважды
         ordering = ['sort_order', 'added_at']
+        verbose_name = 'Товар коллекции' #человеческое название модели в ед числе
+        verbose_name_plural = 'Товары коллекции' #во множественном
 
 class Collection(models.Model):
     name = models.CharField(max_length=100)
@@ -709,5 +713,12 @@ class Collection(models.Model):
     products = models.ManyToManyField(
         'Product',
         through='CollectionProduct',  # указываем промежуточную модель
-        related_name='collections'
+        related_name='collections',
+        verbose_name='Товар'
     )
+    class Meta:
+        verbose_name = 'Коллекция' #человеческое название модели в ед числе
+        verbose_name_plural = 'Коллекции' #во множественном
+    def __str__(self):
+        """Как объект отображается в админке и в формах"""
+        return self.name

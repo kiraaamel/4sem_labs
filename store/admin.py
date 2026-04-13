@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from .models import (
     User, Category, Product, Cart, CartItem, 
-    Order, OrderItem, Review, Wishlist
+    Order, OrderItem, Review, Wishlist, Collection, CollectionProduct
 )
 from .admin_actions import export_products_to_pdf
 
@@ -170,6 +170,12 @@ class OrderAdmin(admin.ModelAdmin):
         updated = queryset.update(status='delivered', delivered_at=timezone.now())
         self.message_user(request, f'Доставлено заказов: {updated}')
 
+class CollectionInline(admin.TabularInline):
+    model = CollectionProduct
+    extra = 1
+    raw_id_fields = ['collection']
+    verbose_name = 'Коллекция'
+    verbose_name_plural = 'Коллекции'
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -184,7 +190,8 @@ class ProductAdmin(admin.ModelAdmin):
                       'full_silver_info', 'images_preview']
     raw_id_fields = ['created_by', 'category']
     date_hierarchy = 'created_at'
-    
+    filter_horizontal = ['collections']
+    inlines = [CollectionInline]
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'slug', 'description', 'category')
@@ -222,9 +229,10 @@ class ProductAdmin(admin.ModelAdmin):
             'description': 'Ссылка на видеообзор, сайт производителя или дополнительную информацию'
         }),
         ('Метаданные', {
-            'fields': ('collection', 'created_by', 'created_at', 'updated_at'),
+            'fields': ('created_by', 'created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
+
     )
     class Media:
         css = {
@@ -496,3 +504,21 @@ class WishlistAdmin(admin.ModelAdmin):
             'fields': ('user', 'product', 'added_at')
         }),
     )
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'created_at', 'products_count']
+    search_fields = ['name']
+    filter_horizontal = ['products']  # красивый виджет для выбора товаров
+    
+    def products_count(self, obj):
+        return obj.products.count()
+    products_count.short_description = 'Кол-во товаров'
+
+
+@admin.register(CollectionProduct)
+class CollectionProductAdmin(admin.ModelAdmin):
+    list_display = ['id', 'collection', 'product', 'added_at', 'sort_order']
+    list_filter = ['collection', 'added_at']
+    search_fields = ['collection__name', 'product__name']
+    raw_id_fields = ['collection', 'product']  # удобно для большого количества записей

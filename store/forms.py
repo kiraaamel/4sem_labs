@@ -2,7 +2,7 @@
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import User, Product, Category, Review, Order
+from .models import User, Product, Category, Review, Order, Collection
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(label='Email', required=True)
@@ -29,14 +29,20 @@ class UserLoginForm(AuthenticationForm):
 
 class ProductForm(forms.ModelForm):
     """Форма для создания/редактирования товара"""
+    collections = forms.ModelMultipleChoiceField(
+        queryset=Collection.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'collections-checkbox'}),
+        label='Коллекции'
+    )
     class Meta:
         model = Product
         #какие поля включаем
         fields = ['name', 'description', 'price', 'old_price', 
                   'stock_quantity', 'category', 'silver_type', 'fineness',
                   'weight', 'size', 'stones', 'stone_type', 'stone_weight',
-                  'collection', 'image', 'image_2', 'image_3', 'image_4', 'image_5',
-                  'instruction_file', 'external_link']
+                   'image', 'image_2', 'image_3', 'image_4', 'image_5',
+                  'instruction_file', 'external_link', 'collections']
         # Пункт 4: widgets как выглядят поля
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Опишите изделие...'}), #высота поля 5 строк
@@ -110,13 +116,17 @@ class ProductForm(forms.ModelForm):
     
     # Пункт 6: save с commit=True
     def save(self, commit=True):
-        product = super().save(commit=False) #создаем объект но не сохраняем в БД
-        # Дополнительная логика перед сохранением
-        if commit:
-            product.save() #сохраняем сам объект
-            self.save_m2m() # Сохраняем many-to-many связи (если будут)
-        return product
-
+            product = super().save(commit=False) #создаем объект но не сохраняем в БД
+            # Дополнительная логика перед сохранением
+            if commit:
+                product.save()#сохраняем сам объект
+                # Сохраняем выбранные коллекции (ManyToMany)
+                self.save_m2m()
+                # Сохраняем связи с коллекциями
+                if hasattr(self, 'cleaned_data'):
+                    self.instance.collections.set(self.cleaned_data['collections'])
+            return product
+        
 
 class ReviewForm(forms.ModelForm):
     """Форма для отзыва о товаре"""
